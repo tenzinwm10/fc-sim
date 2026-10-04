@@ -4,6 +4,12 @@ file(GLOB test_sources CONFIGURE_DEPENDS "test_*.cpp")
 
 foreach(test_src ${test_sources})
   get_filename_component(test_name ${test_src} NAME_WE)
+  if(FCSIM_T2 AND NOT test_name MATCHES "^test_t2_")
+    continue()
+  endif()
+  if(NOT FCSIM_T2 AND test_name MATCHES "^test_t2_")
+    continue()
+  endif()
   add_executable(${test_name} ${test_src})
   target_link_libraries(
     ${test_name} PRIVATE k1sim_shared k1sim_module_consolelog k1sim_module_simulation k1sim_module_sdkbridge
@@ -12,7 +18,9 @@ foreach(test_src ${test_sources})
   add_test(NAME ${test_name} COMMAND ${test_name})
   set_tests_properties(${test_name} PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endforeach()
-set_tests_properties(test_dds_transport PROPERTIES TIMEOUT 20)
+if(NOT FCSIM_T2)
+  set_tests_properties(test_dds_transport PROPERTIES TIMEOUT 20)
+endif()
 
 # macOS offscreen rendering must work on a worker thread without a window server API.
 if(APPLE)

@@ -13,6 +13,7 @@
 #include "RpcRespMsgPubSubTypes.h"
 #include "module/SdkBridge/src/RpcDispatch.hpp"
 #include "shared/k1/BoosterApi.hpp"
+#include "shared/k1/JointIndex.hpp"
 #include "shared/message/Commands.hpp"
 
 namespace k1sim::module::sdkbridge {
@@ -59,10 +60,37 @@ namespace k1sim::module::sdkbridge {
                 continue;
             }
 
-            const RpcOutcome outcome = dispatch_rpc(req.header(),
-                                                    req.body(),
-                                                    current_mode_.load(std::memory_order_relaxed),
-                                                    unknown_api_status_);
+            RpcOutcome outcome;
+            try {
+                outcome = dispatch_rpc(req.header(),
+                                       req.body(),
+                                       current_mode_.load(std::memory_order_relaxed),
+                                       unknown_api_status_);
+            }
+            catch (const std::exception& e) {
+                reactor_.log<NUClear::LogLevel::WARN>("SdkBridge: invalid RPC payload:", e.what());
+                outcome.status = -1;
+                outcome.response_body = R"({"error":"invalid RPC payload"})";
+            }
+#ifdef FCSIM_T2
+            const auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                    std::chrono::steady_clock::now().time_since_epoch())
+                                    .count();
+            const bool policy_live = now_ns - last_policy_command_ns_.load(std::memory_order_relaxed) < 250'000'000;
+            const bool needs_policy = outcome.action.kind == RpcActionKind::WALK ||
+                                      (outcome.action.kind == RpcActionKind::MODE_CHANGE &&
+                                       (outcome.action.mode_change.mode == booster::WALKING ||
+                                        outcome.action.mode_change.mode == booster::SOCCER));
+            const bool unsupported = outcome.action.kind == RpcActionKind::GET_UP ||
+                                     outcome.action.kind == RpcActionKind::LIE_DOWN ||
+                                     outcome.action.kind == RpcActionKind::VISUAL_KICK;
+            if ((needs_policy && !policy_live) || unsupported) {
+                outcome.status = -1;
+                outcome.response_body = needs_policy ? R"({"error":"t2_walk policy stream unavailable"})"
+                                                     : R"({"error":"T2 action policy unavailable"})";
+                outcome.action.kind = RpcActionKind::NONE;
+            }
+#endif
 
             if (outcome.unknown_api_id) {
                 reactor_.log<NUClear::LogLevel::WARN>("SdkBridge: RPC unknown/unparseable api_id",
@@ -111,6 +139,15 @@ namespace k1sim::module::sdkbridge {
             if (!info.valid_data) {
                 continue;
             }
+
+#ifdef FCSIM_T2
+            if (cmd.motor_cmd().size() == JOINT_COUNT && cmd.cmd_type() == 1) {
+                last_policy_command_ns_.store(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        std::chrono::steady_clock::now().time_since_epoch()).count(),
+                    std::memory_order_relaxed);
+            }
+#endif
 
             auto msg      = std::make_unique<k1sim::message::LowCmdMessage>();
             msg->cmd_type = static_cast<int>(cmd.cmd_type());

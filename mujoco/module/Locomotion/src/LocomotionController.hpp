@@ -3,6 +3,7 @@
 
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -80,6 +81,9 @@ namespace k1sim::module {
             int requested_mode = booster::DAMPING;
             int low_cmd_type   = 1;
             std::vector<message::MotorCmdData> low_cmd_motors;
+#ifdef FCSIM_T2
+            std::chrono::steady_clock::time_point low_cmd_time{};
+#endif
         };
 
         CommandSnapshot snapshot_command() const;
@@ -117,6 +121,10 @@ namespace k1sim::module {
         std::array<double, JOINT_COUNT> custom_entry_pose_{};
         bool custom_low_cmd_seen_ = false;
         bool custom_entry_step_   = false;  // the entry step's snapshot predates the mailbox clear
+#ifdef FCSIM_T2
+        bool custom_timed_out_ = false;
+        std::array<double, JOINT_COUNT> custom_timeout_pose_{};
+#endif
 
         uint64_t last_mode_seq_ = 0;
 
@@ -127,6 +135,9 @@ namespace k1sim::module {
         int requested_mode_ = booster::DAMPING;
         int low_cmd_type_   = 1;
         std::vector<message::MotorCmdData> low_cmd_motors_;
+#ifdef FCSIM_T2
+        std::chrono::steady_clock::time_point low_cmd_time_{};
+#endif
 
         // -- cross-thread-visible state --
         std::atomic<int> mode_{booster::DAMPING};

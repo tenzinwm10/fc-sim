@@ -1,0 +1,6 @@
+# Booster Deploy T2_31DOF_CFG.prepare_state stiffness/damping/joint_pos.
+# Order is the 31-entry SDK serial order in shared/t2/JointIndex.hpp.
+# These are startup/pose-hold gains; they are not the t2_walk policy.
+kp: [40, 40, 70, 70, 70, 70, 55, 70, 55, 70, 70, 70, 70, 55, 70, 55, 500, 500, 400, 500, 350, 180, 500, 500, 500, 500, 350, 180, 500, 500, 500]
+kd: [0.65, 0.65, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+ready_pose: [0.0, 0.0, 0.2, -1.3, 0.0, -0.5, 0.0, 0.0, 0.0, 0.2, 1.3, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.0, 0.0, 0.0, 0.23, -0.18, 0.0, -0.0, -0.0, 0.0, 0.23, -0.18, 0.0]

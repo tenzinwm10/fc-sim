@@ -1,0 +1,30 @@
+# Booster T2 scene and NUSim physics settings.
+field: middle
+fields:
+  middle: models/t2/t2_scene_robocup_middle.xml
+
+# NUSim's existing match spawn generator. Only the unprefixed T2 receives
+# SDK commands; additional robots are currently pose-held collision bodies.
+game:
+  field: middle
+  length: 14.0
+  width: 9.0
+  centre_circle_radius: 1.5
+  penalty_mark_distance: 2.0
+  attacker: [-2.0, 0.0]
+  goalkeeper: [-6.5, 0.0]
+  wings: [[-3.0, 2.5], [-3.0, -2.5]]
+  sideline_offset: 0.3
+  sideline_spacing: 0.8
+
+real_time_factor: 1.0
+state_publish_divisor: 20 # 1 kHz physics, 50 Hz LowState
+resync_threshold: 0.05
+
+# Measure these on the actual pitch before drawing hardware conclusions.
+surface:
+  enabled: false
+  friction: 0.8
+  solref_timeconst: 0.02
+  solref_dampratio: 1.0
+foot_log: ""

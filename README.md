@@ -1,5 +1,9 @@
 # NUSim
 
+## FC Isar T2 fork
+
+This `fc-sim` fork adds a selectable Booster T2 31-DoF build, the official T2 MuJoCo assets, a RoboCup soccer scene, and a bridge for Booster Deploy's public `t2_walk` policy. See [T2 setup and validation](docs/T2_SIM_SETUP.md). The original K1 simulator described below remains the default build. The T2 3v3 scene currently controls one robot; five extra bodies are pose-held until independent agents are added.
+
 A self-contained **MuJoCo** simulator for the **Booster Robotics K1** humanoid, used by
 [NUbots](https://nubots.net) for RoboCup development. It replaces **both** Booster's gated Webots build
 **and** their closed-source `mck` motion runner with one inspectable, NUClear-based simulator that speaks

@@ -1,0 +1,9 @@
+# NUSim T2 mode machine. WALKING/SOCCER consume the t2_walk sidecar's
+# /joint_ctrl stream; PREPARE uses gains_t2.yaml to stand.
+initial_mode: prepare
+prepare_blend_time: 1.0
+fall:
+  falling_tilt: 0.35
+  fallen_tilt: 1.0
+  falling_gyro: 1.0
+  fallen_height: 0.60
