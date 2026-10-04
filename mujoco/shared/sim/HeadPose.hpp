@@ -19,7 +19,13 @@ namespace k1sim {
     // origin) along the head's z-axis, near the head's centre of mass (Head_2 inertial z 0.0805).
     // NUbots' K1Sensors removes it again with Hhp (translation [0, 0, -0.08], tuned on the robot),
     // so publishing the bare Head_2 origin would put NUbots' torso this much too low.
+#ifdef FCSIM_T2
+    // T2 has a different head link and no measured head-pose offset yet.
+    // Publish its head_pitch_link origin until the real T2 transform is known.
+    inline constexpr double HEAD_FRAME_ABOVE_PITCH = 0.0;
+#else
     inline constexpr double HEAD_FRAME_ABOVE_PITCH = 0.08;
+#endif
 
     // Hrh = (translate(base_x, base_y, 0) * rotz(base_yaw))^-1 * Hwh * translate(0, 0, HEAD_FRAME_ABOVE_PITCH),
     // from the Head_2 body's world pose (xpos/xquat) and the root free joint's qpos (xy + wxyz quat).

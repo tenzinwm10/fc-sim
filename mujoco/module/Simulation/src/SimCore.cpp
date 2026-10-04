@@ -79,7 +79,17 @@ namespace k1sim {
         }
 
         // Standing base height of the "ready" pose; game spawns and the extra_spawn grid use it.
+#ifdef FCSIM_T2
+        constexpr double STAND_Z = 0.979;
+        constexpr const char* ROBOT_XML = "T2_31dof.xml";
+        constexpr const char* ROOT_BODY = "trunk";
+        constexpr const char* HEAD_BODY = "head_pitch_link";
+#else
         constexpr double STAND_Z = 0.555;
+        constexpr const char* ROBOT_XML = "K1_22dof.xml";
+        constexpr const char* ROOT_BODY = "Trunk";
+        constexpr const char* HEAD_BODY = "Head_2";
+#endif
 
         // Spawn slot for the k-th extra robot (k starts at 1): a 5x4 grid on the field,
         // rows at y = +-1.2 / +-2.4 so nothing lands on the y=0 line the main robot and
@@ -110,7 +120,7 @@ namespace k1sim {
                 throw std::runtime_error("mj_parseXML failed for '" + scene_path + "': " + error);
             }
 
-            const std::string robot_xml = scene_path.substr(0, scene_path.find_last_of('/') + 1) + "K1_22dof.xml";
+            const std::string robot_xml = scene_path.substr(0, scene_path.find_last_of('/') + 1) + ROBOT_XML;
 
             mjsBody* world = mjs_findBody(scene, "world");
             for (int k = 1; k <= static_cast<int>(extras.size()); ++k) {
@@ -131,7 +141,7 @@ namespace k1sim {
                 frame->pos[0]        = pos[0];
                 frame->pos[1]        = pos[1];
                 frame->pos[2]        = pos[2];
-                mjsBody* trunk       = mjs_findBody(robot, "Trunk");
+                mjsBody* trunk       = mjs_findBody(robot, ROOT_BODY);
                 mjsElement* attached = mjs_attach(frame->element, trunk->element, extra_prefix(k).c_str(), "");
                 if (attached == nullptr) {
                     const std::string what = std::string("mjs_attach failed for robot copy ") + std::to_string(k) + ": "
@@ -193,9 +203,9 @@ namespace k1sim {
         left_foot_body_id_  = mj_name2id(m_, mjOBJ_BODY, "left_foot_link");
         right_foot_body_id_ = mj_name2id(m_, mjOBJ_BODY, "right_foot_link");
 
-        head_body_id_ = mj_name2id(m_, mjOBJ_BODY, "Head_2");
+        head_body_id_ = mj_name2id(m_, mjOBJ_BODY, HEAD_BODY);
         if (head_body_id_ < 0) {
-            std::fprintf(stderr, "SimCore: model has no Head_2 body; rt/head_pose will not be published\n");
+            std::fprintf(stderr, "SimCore: model has no %s body; rt/head_pose will not be published\n", HEAD_BODY);
         }
         if (!config_.foot_log_path.empty()) {
             if (left_foot_body_id_ < 0 || right_foot_body_id_ < 0) {

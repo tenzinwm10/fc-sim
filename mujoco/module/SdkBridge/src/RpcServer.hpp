@@ -2,6 +2,7 @@
 #define K1SIM_MODULE_SDKBRIDGE_RPCSERVER_HPP
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <fastdds/dds/publisher/DataWriter.hpp>
 #include <fastdds/dds/subscriber/DataReader.hpp>
@@ -41,6 +42,9 @@ namespace k1sim::module::sdkbridge {
         NUClear::Reactor& reactor_;
         int64_t unknown_api_status_;
         std::atomic<int> current_mode_{0};
+#ifdef FCSIM_T2
+        std::atomic<int64_t> last_policy_command_ns_{0};
+#endif
 
         eprosima::fastdds::dds::DataReader* rpc_req_reader_    = nullptr;
         eprosima::fastdds::dds::DataReader* joint_ctrl_reader_ = nullptr;

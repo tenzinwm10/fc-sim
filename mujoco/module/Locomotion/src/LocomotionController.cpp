@@ -88,6 +88,9 @@ namespace k1sim::module {
         snap.requested_mode = requested_mode_;
         snap.low_cmd_type   = low_cmd_type_;
         snap.low_cmd_motors = low_cmd_motors_;
+#ifdef FCSIM_T2
+        snap.low_cmd_time = low_cmd_time_;
+#endif
         return snap;
     }
 
@@ -107,6 +110,9 @@ namespace k1sim::module {
         std::lock_guard<std::mutex> lock(cmd_mutex_);
         low_cmd_type_   = cmd_type;
         low_cmd_motors_ = std::move(motors);
+#ifdef FCSIM_T2
+        low_cmd_time_ = std::chrono::steady_clock::now();
+#endif
     }
 
     void LocomotionController::step(const mjModel* m, mjData* d) {
@@ -135,6 +141,11 @@ namespace k1sim::module {
             case booster::CUSTOM: break;
             case booster::WALKING:
             case booster::SOCCER:
+#ifdef FCSIM_T2
+                // T2's high-level mode uses the policy sidecar's LowCmd stream.
+                // Preserve the requested mode on the wire for FC Isar's brain.
+                break;
+#else
                 // Wire-compatible, but the walking policy lives on the NUbots_K1 side now
                 // (rt/joint_ctrl in CUSTOM mode). Hold the ready pose instead.
                 std::fprintf(stderr,
@@ -143,6 +154,7 @@ namespace k1sim::module {
                              requested_mode);
                 effective = booster::PREPARE;
                 break;
+#endif
             default:
                 std::fprintf(stderr, "LocomotionController: ignoring unknown ChangeMode value %d\n", requested_mode);
                 return;
@@ -157,6 +169,10 @@ namespace k1sim::module {
                 prepare_start_time_ = d->time;
                 break;
             case booster::CUSTOM:
+#ifdef FCSIM_T2
+            case booster::WALKING:
+            case booster::SOCCER:
+#endif
                 state_                  = State::Custom;
                 custom_parallel_warned_ = false;
                 // PD-hold the pose we entered CUSTOM in until the first LowCmd arrives;
@@ -166,6 +182,9 @@ namespace k1sim::module {
                 custom_entry_pose_   = current_q(d);
                 custom_low_cmd_seen_ = false;
                 custom_entry_step_   = true;
+#ifdef FCSIM_T2
+                custom_timed_out_ = false;
+#endif
                 {
                     std::lock_guard<std::mutex> lock(cmd_mutex_);
                     low_cmd_motors_.clear();
@@ -211,6 +230,20 @@ namespace k1sim::module {
                 return;
             }
         }
+
+#ifdef FCSIM_T2
+        // A stopped policy must not leave the last walking torque latched.
+        // Capture the current pose once and PD-hold it until fresh LowCmd arrives.
+        if (std::chrono::steady_clock::now() - snap.low_cmd_time > std::chrono::milliseconds(250)) {
+            if (!custom_timed_out_) {
+                custom_timeout_pose_ = current_q(d);
+                custom_timed_out_ = true;
+            }
+            pd_.apply(m, d, *map_, custom_timeout_pose_);
+            return;
+        }
+        custom_timed_out_ = false;
+#endif
 
         if (snap.low_cmd_type == 0) {  // PARALLEL: unsupported, hold last ctrl
             if (!custom_parallel_warned_) {

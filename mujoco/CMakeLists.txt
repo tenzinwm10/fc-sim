@@ -5,6 +5,11 @@ project(
   LANGUAGES C CXX
 )
 
+option(FCSIM_T2 "Build the Booster T2 31-DoF simulator instead of the upstream K1" OFF)
+if(FCSIM_T2)
+  add_compile_definitions(FCSIM_T2=1)
+endif()
+
 if(POLICY CMP0135)
   cmake_policy(SET CMP0135 NEW)
 endif()

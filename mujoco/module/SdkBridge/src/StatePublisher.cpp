@@ -110,7 +110,11 @@ namespace k1sim::module::sdkbridge {
         // crank slots carrying the serial-equivalent ankle pitch/roll values (the sim has
         // no true parallel actuation). Clients (e.g. NUbots HardwareIO) index this vector
         // as joint_index - kLeftHipPitch.
+#ifdef FCSIM_T2
+        std::vector<booster_interface::msg::dds_::MotorState_> legs(motors.begin() + t2::LEFT_HIP_PITCH,
+#else
         std::vector<booster_interface::msg::dds_::MotorState_> legs(motors.begin() + JointIndexK1::LeftHipPitch,
+#endif
                                                                     motors.end());
         low_state.motor_state_parallel(legs);
         low_state_writer_->write(&low_state);

@@ -3,6 +3,9 @@
 
 #include <array>
 #include <cstddef>
+#ifdef FCSIM_T2
+#include "shared/t2/JointIndex.hpp"
+#endif
 
 namespace k1sim {
 
@@ -35,6 +38,7 @@ namespace k1sim {
         RightAnkleRoll,
     };
 
+#ifndef FCSIM_T2
     inline constexpr std::size_t JOINT_COUNT = 22;
 
     // Joint *and* actuator names in the vendored booster_assets K1_22dof.xml,
@@ -47,6 +51,12 @@ namespace k1sim {
         "Right_Hip_Pitch",   "Right_Hip_Roll",   "Right_Hip_Yaw",         "Right_Knee_Pitch",
         "Right_Ankle_Pitch", "Right_Ankle_Roll",
     };
+#else
+    // Build-time robot selection lets the original K1 and new T2 binaries use
+    // the same transport and physics code while keeping the SDK serial order.
+    inline constexpr std::size_t JOINT_COUNT = t2::JOINT_COUNT;
+    inline constexpr auto JOINT_NAMES = t2::JOINT_NAMES;
+#endif
 
 }  // namespace k1sim
 

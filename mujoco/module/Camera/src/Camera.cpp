@@ -35,7 +35,11 @@ namespace k1sim::module {
     Camera::Camera(std::unique_ptr<NUClear::Environment> environment) : Reactor(std::move(environment)) {
 
         on<Startup>().then([this] {
+#ifdef FCSIM_T2
+            camera::CameraConfig cfg = camera::load_config(config::load("camera_t2.yaml"));
+#else
             camera::CameraConfig cfg = camera::load_config(config::load("camera.yaml"));
+#endif
             log<NUClear::LogLevel::INFO>("Camera: starting offscreen render thread (segment",
                                          cfg.segment.c_str(),
                                          ",",
@@ -137,9 +141,14 @@ namespace k1sim::module {
                                               e.what());
             }
         }
-        const int head_body_id = mj_name2id(model, mjOBJ_BODY, "Head_2");
+#ifdef FCSIM_T2
+        const char* head_body_name = "head_pitch_link";
+#else
+        const char* head_body_name = "Head_2";
+#endif
+        const int head_body_id = mj_name2id(model, mjOBJ_BODY, head_body_name);
         if (pose_writer != nullptr && head_body_id < 0) {
-            log<NUClear::LogLevel::ERROR>("Camera: body 'Head_2' not found — head pose will not be published");
+            log<NUClear::LogLevel::ERROR>("Camera: body", head_body_name, "not found — head pose will not be published");
             pose_writer.reset();
         }
 

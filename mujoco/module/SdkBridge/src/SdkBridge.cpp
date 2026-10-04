@@ -24,7 +24,11 @@ namespace k1sim::module {
             const int domain                 = cfg["domain"].as<int>(0);
             const bool udp_only              = cfg["udp_only"].as<bool>(false) || env_flag_set("K1_DDS_UDP_ONLY");
             const double battery_soc         = cfg["battery_soc"].as<double>(100.0);
+#ifdef FCSIM_T2
+            const int64_t unknown_api_status = -1;  // never acknowledge an unimplemented T2 action
+#else
             const int64_t unknown_api_status = cfg["unknown_api_status"].as<int64_t>(0);
+#endif
 
             dds_             = std::make_unique<sdkbridge::DdsParticipant>(domain, udp_only);
             state_publisher_ = std::make_unique<sdkbridge::StatePublisher>(*dds_, battery_soc);

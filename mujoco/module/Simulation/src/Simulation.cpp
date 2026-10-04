@@ -16,8 +16,13 @@ namespace k1sim::module {
     namespace {
 
         SimCore::Config build_sim_config() {
+#ifdef FCSIM_T2
+            auto sim_cfg   = config::load("simulation_t2.yaml");
+            auto gains_cfg = config::load("gains_t2.yaml");
+#else
             auto sim_cfg   = config::load("simulation.yaml");
             auto gains_cfg = config::load("gains.yaml");
+#endif
 
             SimCore::Config cfg;
             if (cli().game > 0) {

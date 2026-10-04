@@ -18,8 +18,13 @@ namespace k1sim::module {
     Locomotion::Locomotion(std::unique_ptr<NUClear::Environment> environment) : Reactor(std::move(environment)) {
 
         on<Startup>().then([this] {
+#ifdef FCSIM_T2
+            auto locomotion_cfg = config::load("locomotion_t2.yaml");
+            auto gains_cfg      = config::load("gains_t2.yaml");
+#else
             auto locomotion_cfg = config::load("locomotion.yaml");
             auto gains_cfg      = config::load("gains.yaml");
+#endif
 
             try {
                 controller_ = std::make_unique<LocomotionController>(locomotion_cfg, gains_cfg);
@@ -30,7 +35,11 @@ namespace k1sim::module {
             }
 
             emit(std::make_unique<ControllerHandle>(ControllerHandle{controller_.get()}));
+#ifdef FCSIM_T2
+            log<NUClear::LogLevel::INFO>("Locomotion ready (T2 policy sidecar on rt/joint_ctrl)");
+#else
             log<NUClear::LogLevel::INFO>("Locomotion ready (servo-command listener; policies live in NUbots_K1)");
+#endif
         });
 
         on<Trigger<HeadCommand>>().then(
@@ -47,7 +56,13 @@ namespace k1sim::module {
         // Locomotion policies (walk, get-up, lie-down, kick) moved to the NUbots_K1 side;
         // they arrive as LowCmd servo targets in CUSTOM mode. The old high-level RPCs stay
         // on the wire for SDK compatibility but are ignored with a warning.
+#ifdef FCSIM_T2
+        // The t2_walk ROS sidecar observes the same Move request. NUSim remains
+        // the only RPC responder and consumes the sidecar's LowCmd stream.
+        on<Trigger<WalkCommand>>().then([](const WalkCommand&) {});
+#else
         on<Trigger<WalkCommand>>().then([this](const WalkCommand&) { warn_once(walk_warned_, "Move"); });
+#endif
         on<Trigger<GetUpRequest>>().then([this](const GetUpRequest&) { warn_once(getup_warned_, "GetUp"); });
         on<Trigger<LieDownRequest>>().then([this](const LieDownRequest&) { warn_once(liedown_warned_, "LieDown"); });
         on<Trigger<VisualKickRequest>>().then(

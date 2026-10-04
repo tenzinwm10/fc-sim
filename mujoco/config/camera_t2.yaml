@@ -1,0 +1,7 @@
+# T2 image parameters are provisional until measured on the physical robot.
+segment: _boostercamera_head_rgb
+pose_segment: "" # ROS 2 /head_pose_stamped is emitted by t2_camera_bridge.py
+width: 640
+height: 480
+fps: 30
+mjcf_camera: head
